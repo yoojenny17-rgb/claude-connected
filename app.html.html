@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPA 발음기호 정밀 분석 코퍼스 100 🐾</title>
+    <!-- 모바일 앱 화면 설정 (PWA 지원) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#FF8EA5">
+    
+    <style>
+        :root {
+            --primary-color: #FF8EA5;
+            --secondary-color: #FFD1DC;
+            --bg-color: #FFF5F7;
+            --card-bg: #FFFFFF;
+            --text-color: #4A4A4A;
+            --accent-color: #7CD1B8;
+            --incorrect-color: #FF6B6B;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(255, 142, 165, 0.2);
+            width: 100%;
+            max-width: 580px;
+            padding: 25px;
+            box-sizing: border-box;
+            border: 4px solid var(--secondary-color);
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .animal-avatar { font-size: 70px; line-height: 1; margin-bottom: 10px; }
+        h1 { font-size: 1.4rem; color: #FF6B81; margin: 0 0 5px 0; }
+        .progress-text { font-size: 0.85rem; color: #888; margin-bottom: 15px; }
+
+        .question-box {
+            background-color: #FFF0F3;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px dashed var(--primary-color);
+        }
+
+        .options-grid { display: grid; gap: 10px; margin-bottom: 20px; }
+        .option-btn {
+            background-color: #F0F4F8;
+            border: 2px solid #E1E8ED;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--text-color);
+            transition: all 0.2s ease;
+        }
+        .option-btn.correct { background-color: #D4EDDA; border-color: var(--accent-color); color: #155724; }
+        .option-btn.incorrect { background-color: #F8D7DA; border-color: var(--incorrect-color); color: #721C24; }
+
+        .sentences-section {
+            margin-top: 20px;
+            display: none;
+            background: #FAFAFA;
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid #EEE;
+        }
+
+        .sentence-card {
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 2px solid transparent;
+        }
+        .sentence-card.selected {
+            border-color: #3182CE;
+            background-color: #F0F9FF;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .feedback-card {
+            background: #F0F9FF;
+            border: 2px solid #BEE3F8;
+            border-radius: 14px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .coach-badge {
+            display: inline-block;
+            background-color: #2B6CB0;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .word-analysis {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .phoneme-badge {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid #E2E8F0;
+        }
+        .phoneme-badge.good { background-color: #D4EDDA; color: #155724; border-color: #C3E6CB; }
+        .phoneme-badge.bad  { background-color: #F8D7DA; color: #721C24; border-color: #F5C6CB; }
+
+        .ipa-text { 
+            font-size: 0.8rem; 
+            color: #2B6CB0; 
+            margin-top: 3px; 
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-weight: normal;
+        }
+
+        .feedback-detail-box {
+            text-align: left;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .feedback-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #3182CE;
+        }
+
+        .feedback-item-title {
+            font-weight: bold;
+            color: #2B6CB0;
+            margin-bottom: 4px;
+        }
+
+        .btn-next {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1rem;
+            margin-top: 15px;
+            background-color: var(--accent-color);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="animal-avatar" id="animal-avatar">🐱</div>
+        <h1>IPA 발음기호 정밀 분석 코퍼스 100 🐾</h1>
+        <div class="progress-text" id="progress-text">남은 문제: 100 / 100</div>
+    </div>
+
+    <div class="question-box">
+        <p style="margin: 0; font-size: 0.9rem; color: #888;">다음 중 올바른 콜로케이션 표현은?</p>
+        <div class="question-title" id="question-meaning" style="font-size: 1.3rem; font-weight: bold;">"..."</div>
+    </div>
+
+    <div class="options-grid" id="options-container"></div>
+
+    <div class="sentences-section" id="sentences-section">
+        <h3 style="margin-top:0; font-size:1rem; color:#4A4A4A;">📖 예문 학습 & IPA 발음기호 피드백</h3>
+        <div id="sentences-list"></div>
+
+        <div style="text-align:center; margin-top:15px; background-color:#EBF8FF; padding:12px; border-radius:12px;">
+            <p id="target-sentence-info" style="font-size:0.85rem; color:#2B6CB0; margin:0 0 8px 0; font-weight:bold;">
+                🎯 선택된 문장 (1번): <br><strong>"..."</strong>
+            </p>
+            <button id="record-btn" class="btn" style="background-color:#3182CE; cursor:pointer;" onclick="startRecording()">🎤 녹음 시작하기</button>
+            <div id="stt-result" style="font-size:0.85rem; color:#2563EB; font-weight:bold; margin-top:8px;">인식 준비 완료! 버튼을 누르고 읽어보세요.</div>
+        </div>
+
+        <div class="feedback-card" id="feedback-card" style="display:none;">
+            <span class="coach-badge">EXPERT PHONETICS DIAGNOSIS</span>
+            <h4 style="margin:0 0 8px 0; color:#2B6CB0; font-size:0.95rem;">🔬 음소(/ /)·연음·강세 종합 분석 피드백</h4>
+            <div class="word-analysis" id="word-analysis-box"></div>
+            <div class="feedback-detail-box" id="feedback-detail-box"></div>
+        </div>
+    </div>
+
+    <button class="btn btn-next" id="next-btn" onclick="loadNextQuestion()">다음 문제 풀기 🐾</button>
+</div>
+
+<script>
+    const rawCollocations = [
+        { v: "make", n: "a decision", m: "결정을 내리다", s: ["I need to make a decision soon.", "It is hard to make a decision.", "She helped me make a decision."] },
+        { v: "take", n: "a break", m: "휴식을 취하다", s: ["Let's take a break for ten minutes.", "You look tired, take a break.", "I usually take a break at two."] },
+        { v: "pay", n: "attention", m: "주의를 기울이다", s: ["Please pay attention to the teacher.", "He didn't pay attention to the sign.", "Pay attention to the details."] },
+        { v: "make", n: "an appointment", m: "약속을 잡다", s: ["I want to make an appointment.", "Call to make an appointment.", "She made an appointment for Monday."] },
+        { v: "take", n: "a shower", m: "샤워를 하다", s: ["I take a shower every morning.", "He is going to take a shower now.", "Take a shower after working out."] },
+        { v: "make", n: "a mistake", m: "실수를 하다", s: ["Everyone can make a mistake.", "Don't worry if you make a mistake.", "I made a mistake on the test."] },
+        { v: "do", n: "your best", m: "최선을 다하다", s: ["Just do your best today.", "Always do your best in life.", "I tried to do my best."] },
+        { v: "take", n: "a picture", m: "사진을 찍다", s: ["Can you take a picture of us?", "I like to take a picture here.", "She took a picture of the sea."] },
+        { v: "make", n: "money", m: "돈을 벌다", s: ["He wants to make money fast.", "It takes time to make money.", "She makes money by writing."] },
+        { v: "do", n: "a favor", m: "호의를 베풀다", s: ["Can you do me a favor?", "I need to ask you to do a favor.", "He did a favor for his friend."] },
+        { v: "take", n: "a walk", m: "산책하다", s: ["Let's take a walk in the park.", "I take a walk every evening.", "Taking a walk is good for health."] },
+        { v: "make", n: "an effort", m: "노력하다", s: ["You should make an effort.", "We need to make an effort together.", "He made an effort to learn English."] },
+        { v: "do", n: "the dishes", m: "설거지하다", s: ["I will do the dishes after dinner.", "Can you help me do the dishes?", "He always does the dishes."] },
+        { v: "take", n: "medicine", m: "약/영양제를 복용하다", s: ["Don't forget to take medicine.", "I need to take medicine after meals.", "She took medicine for a cold."] },
+        { v: "make", n: "friends", m: "친구를 사귀다", s: ["It is easy to make friends here.", "She likes to make friends.", "I made new friends at school."] },
+        { v: "lose", n: "weight", m: "체중을 감량하다", s: ["I want to lose weight this year.", "Exercise helps you lose weight.", "She lost weight by running."] },
+        { v: "gain", n: "weight", m: "체중이 늘다", s: ["I gained weight recently.", "Eating late can make you gain weight.", "He is trying to gain weight."] },
+        { v: "save", n: "time", m: "시간을 절약하다", s: ["This app will save time.", "Taking a taxi saves time.", "I want to save time today."] },
+        { v: "waste", n: "time", m: "시간을 낭비하다", s: ["Don't waste time on games.", "I hate to waste time.", "We wasted time waiting."] },
+        { v: "spend", n: "time", m: "시간을 보내다", s: ["I love to spend time with you.", "How do you spend time on weekends?", "She spent time reading books."] },
+        { v: "keep", n: "a secret", m: "비밀을 유지하다", s: ["Can you keep a secret?", "I always keep a secret.", "He kept the secret for years."] },
+        { v: "keep", n: "a promise", m: "약속을 지키다", s: ["You should keep a promise.", "He always keeps his promise.", "It is important to keep a promise."] },
+        { v: "break", n: "a promise", m: "약속을 어기다", s: ["Never break a promise.", "He broke his promise again.", "It is bad to break a promise."] },
+        { v: "break", n: "the law", m: "법을 위반하다", s: ["If you break the law, you get punished.", "Don't break the law.", "He was arrested for breaking the law."] },
+        { v: "catch", n: "a cold", m: "감기에 걸리다", s: ["Be careful not to catch a cold.", "I catch a cold easily in winter.", "She caught a cold yesterday."] },
+        { v: "catch", n: "fire", m: "불이 붙다", s: ["Paper can catch fire easily.", "The building caught fire last night.", "Be careful so it doesn't catch fire."] },
+        { v: "catch", n: "a bus", m: "버스를 타다", s: ["Hurry up to catch the bus.", "I need to catch the 8 AM bus.", "She caught the early train."] },
+        { v: "raise", n: "your voice", m: "목소리를 높이다", s: ["Don't raise your voice at me.", "He raised his voice in anger.", "There is no need to raise your voice."] },
+        { v: "ask", n: "a question", m: "질문을 하다", s: ["May I ask a question?", "Feel free to ask a question.", "She asked a question about the test."] },
+        { v: "give", n: "an answer", m: "답변을 하다", s: ["Can you give me an answer?", "He gave a quick answer.", "Please give an answer by tomorrow."] },
+        { v: "give", n: "a speech", m: "연설을 하다", s: ["She will give a speech tomorrow.", "He gave an inspiring speech.", "I am nervous to give a speech."] },
+        { v: "give", n: "advice", m: "조언을 하다", s: ["Can you give me some advice?", "My dad gave me good advice.", "She likes to give advice."] },
+        { v: "hold", n: "hands", m: "손을 잡다", s: ["The kids hold hands when walking.", "They held hands in the park.", "I like holding hands with you."] },
+        { v: "hold", n: "your breath", m: "숨을 참다", s: ["Hold your breath underwater.", "How long can you hold your breath?", "He held his breath in surprise."] },
+        { v: "take", n: "control", m: "상황을 제어하다", s: ["You need to take control of the situation.", "He took control of the project.", "She is taking control now."] },
+        { v: "take", n: "a risk", m: "위험을 감수하다", s: ["Sometimes you have to take a risk.", "Don't take an unnecessary risk.", "He took a big risk in business."] },
+        { v: "take", n: "a seat", m: "자리에 앉다", s: ["Please take a seat over there.", "Can I take a seat here?", "He took a seat near the door."] },
+        { v: "have", n: "a fever", m: "열이 나다", s: ["I think I have a fever.", "The child has a high fever.", "Stay home if you have a fever."] },
+        { v: "have", n: "fun", m: "재미있게 놀다", s: ["Have fun at the party!", "We had a lot of fun today.", "It is important to have fun."] },
+        { v: "have", n: "a conversation", m: "대화를 나누다", s: ["Let's have a conversation about this.", "I had a long conversation with him.", "They are having a conversation now."] },
+        { v: "have", n: "a nice day", m: "좋은 하루를 보내다", s: ["Have a nice day ahead!", "Thank you, have a nice day.", "She wished me to have a nice day."] },
+        { v: "change", n: "your mind", m: "생각을 바꾸다", s: ["It is okay to change your mind.", "He changed his mind at the last minute.", "Nothing can change my mind."] },
+        { v: "change", n: "the subject", m: "주제를 바꾸다", s: ["Let's change the subject now.", "She changed the subject quickly.", "Don't try to change the subject."] },
+        { v: "run", n: "late", m: "약속에 늦다", s: ["I am running late for work.", "The bus is running late today.", "Sorry, I am running late."] },
+        { v: "run", n: "a business", m: "사업을 운영하다", s: ["She runs a small business.", "It is hard to run a business.", "He wants to run his own business."] },
+        { v: "keep", n: "in touch", m: "연락을 주고받다", s: ["Let's keep in touch via email.", "I hope we can keep in touch.", "They kept in touch for ten years."] },
+        { v: "keep", n: "quiet", m: "침묵을 지키다", s: ["Please keep quiet in the library.", "He kept quiet during the meeting.", "You should keep quiet now."] },
+        { v: "get", n: "a chance", m: "기회를 얻다", s: ["I hope to get a chance to go.", "She got a chance to present.", "If you get a chance, try it."] },
+        { v: "get", n: "a job", m: "직장을 구하다", s: ["He wants to get a job soon.", "It is not easy to get a job.", "She got a job at a school."] },
+        { v: "get", n: "lost", m: "길을 잃다", s: ["Don't get lost in the city.", "We got lost on the way.", "Use a map so you don't get lost."] },
+        { v: "get", n: "married", m: "결혼하다", s: ["They plan to get married next year.", "She got married last month.", "Are you going to get married?"] },
+        { v: "get", n: "ready", m: "준비를 마치다", s: ["Hurry and get ready to go.", "I need ten minutes to get ready.", "She is getting ready now."] },
+        { v: "get", n: "in the car", m: "차에 타다", s: ["Get in the car quickly.", "He got in the car and left.", "Please get in the car now."] },
+        { v: "get", n: "angry", m: "화가 나다", s: ["Don't get angry over small things.", "He gets angry very easily.", "She got angry at his lie."] },
+        { v: "get", n: "home", m: "집에 오다", s: ["What time do you get home?", "I got home late last night.", "Call me when you get home."] },
+        { v: "fall", n: "asleep", m: "잠에 들다", s: ["I usually fall asleep at 11 PM.", "He fell asleep while watching TV.", "It was hard to fall asleep."] },
+        { v: "fall", n: "in love", m: "사랑에 빠지다", s: ["They fell in love at first sight.", "It is wonderful to fall in love.", "She falls in love easily."] },
+        { v: "spread", n: "a rumor", m: "소문을 퍼뜨리다", s: ["Don't spread a rumor without proof.", "Someone spread a false rumor.", "Rumors spread very quickly."] },
+        { v: "never", n: "mind", m: "신경 쓰지 마라", s: ["Never mind, it's not important.", "If you are busy, never mind.", "Oh, never mind about that."] },
+        { v: "open", n: "your heart", m: "마음을 열다", s: ["Try to open your heart to others.", "She opened her heart to him.", "It takes courage to open your heart."] },
+        { v: "close", n: "your eyes", m: "눈을 감다", s: ["Close your eyes and make a wish.", "He closed his eyes to listen.", "Close your eyes for five seconds."] },
+        { v: "lock", n: "the door", m: "문을 잠그다", s: ["Don't forget to lock the door.", "She locked the door before sleeping.", "Is the door locked properly?"] },
+        { v: "set", n: "an alarm", m: "알람을 맞추다", s: ["I need to set an alarm for 6 AM.", "Did you set the alarm correctly?", "She set an alarm on her phone."] },
+        { v: "set", n: "the table", m: "상/테이블을 차리다", s: ["Can you help me set the table?", "Dinner is ready, set the table.", "She is setting the table now."] },
+        { v: "set", n: "a goal", m: "목표를 설정하다", s: ["It is good to set a goal.", "He set a goal to read 10 books.", "Set a realistic goal first."] },
+        { v: "set", n: "a good example", m: "좋은 모범을 보이다", s: ["Parents should set a good example.", "He sets a good example for kids.", "Try to set a good example."] },
+        { v: "spend", n: "money", m: "돈을 쓰다", s: ["Don't spend money on useless things.", "I spent money on new clothes.", "How much did you spend money?"] },
+        { v: "pay", n: "in cash", m: "현금으로 지불하다", s: ["Can I pay in cash?", "He paid in cash for the item.", "I prefer to pay in cash."] },
+        { v: "pay", n: "by credit card", m: "신용카드로 지불하다", s: ["Do you accept pay by credit card?", "I paid by credit card.", "Pay by credit card is convenient."] },
+        { v: "take", n: "an exam", m: "시험을 치르다", s: ["I have to take an exam tomorrow.", "She passed after taking the exam.", "Are you ready to take an exam?"] },
+        { v: "pass", n: "an exam", m: "시험에 합격하다", s: ["I hope you pass an exam.", "He passed the exam with high scores.", "She studied hard to pass an exam."] },
+        { v: "fail", n: "an exam", m: "시험에 떨어지다", s: ["Don't be sad if you fail an exam.", "He failed the exam last week.", "Study more so you don't fail an exam."] },
+        { v: "take", n: "a class", m: "수업을 듣다", s: ["I take an English class on Mondays.", "She is taking a cooking class.", "Which class do you want to take?"] },
+        { v: "take", n: "notes", m: "메모를 하다", s: ["Please take notes during the lecture.", "He took notes in his notebook.", "Taking notes helps you remember."] },
+        { v: "take", n: "your temperature", m: "체온을 재다", s: ["Let me take your temperature.", "She took her temperature this morning.", "Please take your temperature before entry."] },
+        { v: "turn", n: "down the volume", m: "소리를 줄이다", s: ["Please turn down the volume.", "He turned down the music.", "Turn down the TV volume."] },
+        { v: "turn", n: "up the volume", m: "소리를 키우다", s: ["Can you turn up the volume?", "I love this song, turn up the music!", "She turned up the sound."] },
+        { v: "turn", n: "on the light", m: "불을 켜다", s: ["Please turn on the light.", "It is dark, turn on the light.", "He turned on the lamp."] },
+        { v: "turn", n: "off the light", m: "불을 끄다", s: ["Don't forget to turn off the light.", "Turn off the light before going out.", "She turned off all the lights."] },
+        { v: "express", n: "an opinion", m: "의견을 표현하다", s: ["Feel free to express an opinion.", "He expressed his opinion clearly.", "It is important to express an opinion."] },
+        { v: "wait", n: "for the result", m: "결과를 기다리다", s: ["We are waiting for the result.", "He waited for the test result.", "Please wait for the result patiently."] },
+        { v: "call", n: "a taxi", m: "택시를 부르다", s: ["Can you call a taxi for me?", "I will call a taxi now.", "She called a taxi to the airport."] },
+        { v: "hang", n: "up the phone", m: "전화를 끊다", s: ["Don't hang up the phone yet.", "He hung up the phone suddenly.", "She said bye and hung up the phone."] },
+        { v: "kill", n: "time", m: "시간을 때우다", s: ["I read a book to kill time.", "We played games to kill time.", "How do you kill time while waiting?"] },
+        { v: "follow", n: "the rules", m: "규칙을 준수하다", s: ["Everyone must follow the rules.", "He always follows the rules.", "Please follow the rules here."] },
+        { v: "break", n: "the rules", m: "규칙을 위반하다", s: ["Do not break the rules.", "He broke the rules and got punished.", "Breaking the rules is not allowed."] },
+        { v: "clean", n: "the room", m: "방을 청소하다", s: ["Clean the room before dinner.", "She cleans her room every weekend.", "I cleaned the room all morning."] },
+        { v: "make", n: "the bed", m: "침대를 정돈하다", s: ["Make the bed after waking up.", "He always makes his bed.", "I forgot to make the bed today."] },
+        { v: "wash", n: "the car", m: "세차하다", s: ["I will wash the car this Sunday.", "He is washing the car outside.", "We should wash the car together."] },
+        { v: "go", n: "shopping", m: "쇼핑하러 가다", s: ["Let's go shopping at the mall.", "She went shopping for food.", "I love going shopping on weekends."] },
+        { v: "go", n: "swimming", m: "수영하러 가다", s: ["It is hot, let's go swimming.", "He goes swimming every morning.", "She went swimming in the river."] },
+        { v: "go", n: "to bed", m: "잠자리에 들다", s: ["Time to go to bed now.", "I go to bed early every day.", "He went to bed after finishing work."] },
+        { v: "go", n: "on vacation", m: "휴가를 떠나다", s: ["We are going on vacation next week.", "She went on vacation to Hawaii.", "I need to go on vacation soon."] },
+        { v: "miss", n: "the bus", m: "버스를 놓치다", s: ["Hurry or you will miss the bus.", "I missed the bus this morning.", "She ran fast not to miss the bus."] },
+        { v: "miss", n: "an opportunity", m: "기회를 놓치다", s: ["Don't miss an opportunity to learn.", "He missed a great opportunity.", "It is sad to miss an opportunity."] },
+        { v: "miss", n: "someone", m: "누군가를 그리워하다", s: ["I miss you so much.", "She misses her family.", "He will miss his friends."] },
+        { v: "look", n: "at a picture", m: "사진을 보다", s: ["Look at this old picture.", "She is looking at a picture.", "We looked at the photos together."] },
+        { v: "look", n: "for keys", m: "열쇠를 찾다", s: ["I am looking for my keys.", "Did you look for the keys?", "She found them after looking for hours."] },
+        { v: "look", n: "after a child", m: "아이를 돌보다", s: ["Can you look after my child?", "She looks after her younger brother.", "Looking after kids is hard work."] },
+        { v: "refresh", n: "your memory", m: "기억을 되살리다", s: ["Let me refresh your memory.", "I checked the notes to refresh my memory.", "Look at the map to refresh your memory."] },
+        { v: "cancel", n: "an appointment", m: "약속을 취소하다", s: ["I need to cancel my appointment.", "He canceled the doctor appointment.", "Please call if you need to cancel an appointment."] }
+    ];
+
+    const ipaDictionary = {
+        "i": "/aɪ/", "need": "/niːd/", "to": "/tuː/", "make": "/meɪk/", "a": "/ə/", "decision": "/dɪˈsɪʒn/", "soon": "/suːn/",
+        "made": "/meɪd/", "take": "/teɪk/", "break": "/breɪk/", "shower": "/ˈʃaʊər/", "pay": "/peɪ/", "attention": "/əˈtenʃn/",
+        "appointment": "/əˈpɔɪntmənt/", "mistake": "/mɪˈsteɪk/", "do": "/duː/", "your": "/jɔːr/", "best": "/best/", "picture": "/ˈpɪktʃər/",
+        "money": "/ˈmʌni/", "favor": "/ˈfeɪvər/", "walk": "/wɔːk/", "effort": "/ˈefərt/", "dishes": "/ˈdɪʃɪz/", "medicine": "/ˈmedsn/",
+        "friends": "/frendz/", "lose": "/luːz/", "gain": "/ɡeɪn/", "weight": "/weɪt/", "save": "/seɪv/", "waste": "/weɪst/", "spend": "/spend/",
+        "time": "/taɪm/", "keep": "/kiːp/", "secret": "/ˈsiːkrət/", "promise": "/ˈprɑːmɪs/", "pass": "/pæs/", "exam": "/ɪɡˈzæm/", "cancel": "/ˈkænsl/"
+    };
+
+    function getIPA(word) {
+        const clean = word.toLowerCase().replace(/[^\w]/g, '');
+        if (ipaDictionary[clean]) return ipaDictionary[clean];
+        
+        let ipa = clean
+            .replace(/th/g, 'θ').replace(/sh/g, 'ʃ').replace(/ch/g, 'tʃ')
+            .replace(/ph/g, 'f').replace(/ee/g, 'iː').replace(/oo/g, 'uː')
+            .replace(/ea/g, 'iː').replace(/ai/g, 'eɪ').replace(/ay/g, 'eɪ')
+            .replace(/a/g, 'æ').replace(/e/g, 'e').replace(/i/g, 'ɪ')
+            .replace(/o/g, 'ɑː').replace(/u/g, 'ʌ');
+        return `/${ipa}/`;
+    }
+
+    const phoneticsDB = {
+        "made": { stress: "MADE (단일음절 주강세)", linking: "made a -> /meɪ.də/ (유성 파열음 /d/와 모음 연음)", tip: "💡 팁: 'made'의 /eɪ/ 이중모음은 입을 넓게 벌렸다 오므리며, 끝자음 유성 파열음(/d/)은 혀끝을 상악 치경에 대고 성대를 울려 부드럽게 떼어내세요." },
+        "make": { stress: "MAKE (단일음절 주강세)", linking: "make a -> /meɪ.kə/ (무성 파열음 /k/와 모음 연음)", tip: "💡 팁: 'make'의 끝음 /k/는 혀 뒷부분(설후부)을 입천장 부드러운 곳(연구개)에 대었다 떼며 공기를 튀겨주세요." },
+        "decision": { stress: "de-CI-sion (2음절 주강세)", linking: "make a decision -> /meɪ.kə.dɪˈsɪ.ʒn/", tip: "💡 팁: 'CI' 발음 시 혀끝을 윗잇몸 뒤쪽에 대고 목소리를 떨어 유성 마찰음(/ʒ/)을 만드세요." },
+        "appointment": { stress: "ap-POINT-ment (2음절 주강세)", linking: "an appointment -> /ən.əˈpɔɪnt.mənt/", tip: "💡 팁: 'POINT'의 이중모음(/ɔɪ/)을 크게 벌린 뒤 마지막 /t/는 숨을 잠깐 참으세요." },
+        "attention": { stress: "at-TEN-tion (2음절 주강세)", linking: "pay attention -> /peɪ.əˈten.ʃn/", tip: "💡 팁: 'TEN' 부위에서 혀끝을 윗잇몸 치경에 세게 붙였다 떼며 숨을 터뜨리세요." },
+        "mistake": { stress: "mis-TAKE (2음절 주강세)", linking: "make a mistake -> /meɪ.kə.mɪˈsteɪk/", tip: "💡 팁: /s/ 소리 뒤의 /t/는 경음화되어 '미스떼이크'처럼 소리 납니다." },
+        "picture": { stress: "PIC-ture (1음절 주강세)", linking: "take a picture -> /teɪ.kə.ˈpɪk.tʃər/", tip: "💡 팁: 'PIC'의 무성 파열음(/k/) 후 입술을 오므려 '쳐' 모양의 파찰음(/tʃ/)을 만드세요." },
+        "shower": { stress: "SHOW-er (1음절 주강세)", linking: "take a shower -> /teɪ.kə.ˈʃaʊ.ər/", tip: "💡 팁: 첫음 /ʃ/는 입술을 앞으로 둥글게 오므린 채 바람 빠지는 소리를 내세요." },
+        "break": { stress: "BREAK (단일음절 주강세)", linking: "take a break -> /teɪ.kə.breɪk/", tip: "💡 팁: /r/ 발음 시 혀끝이 입천장에 닿지 않도록 말아 구부리세요." }
+    };
+
+    function getDynamicPhoneticData(word) {
+        const clean = word.toLowerCase().replace(/[^\w]/g, '');
+        if (phoneticsDB[clean]) return phoneticsDB[clean];
+
+        let tipText = "";
+        const lastChar = clean.slice(-1);
+
+        if (['d', 't', 'n', 'l'].includes(lastChar)) {
+            tipText = `💡 팁: '${clean}'의 끝음소는 혀끝을 상악 치경(윗잇몸 뒤)에 가볍게 접촉시키고 호흡을 조절하세요.`;
+        } else if (['m', 'p', 'b'].includes(lastChar)) {
+            tipText = `💡 팁: '${clean}'의 끝음소는 양 입술(양순)을 완전히 붙였다 떼며 소리를 내야 합니다.`;
+        } else if (['k', 'g'].includes(lastChar)) {
+            tipText = `💡 팁: '${clean}'의 끝음소는 혀 뒷부분을 연구개(입천장 부드러운 곳)에 밀착시킨 뒤 떼어내세요.`;
+        } else if (['s', 'z', 'x'].includes(lastChar)) {
+            tipText = `💡 팁: '${clean}'의 끝 마찰음은 치아를 마주 보고 혀 사이로 바람을 얇게 내보내세요.`;
+        } else {
+            tipText = `💡 팁: '${clean}' 발음 시 모음의 호흡 길이를 충분히 유지하면서 다음 단어로 매끄럽게 연결하세요.`;
+        }
+
+        return {
+            stress: `${clean.toUpperCase()} (주강세 강조)`,
+            linking: `${clean} + 다음 모음 자음 연결`,
+            tip: tipText
+        };
+    }
+
+    function build100Dataset() {
+        return rawCollocations.map((item, idx) => {
+            const verbList = ["make", "take", "do", "pay", "have", "keep", "get", "set", "run", "break", "give", "go", "miss", "look"];
+            const wrongVerbs = verbList.filter(v => v !== item.v).sort(() => 0.5 - Math.random()).slice(0, 3);
+            const options = [item.v + " " + item.n, ...wrongVerbs.map(v => v + " " + item.n)].sort(() => 0.5 - Math.random());
+
+            return {
+                id: idx + 1,
+                meaning: item.m,
+                correct: item.v + " " + item.n,
+                options: options,
+                sentences: item.s.map(st => ({ en: st, ko: item.m }))
+            };
+        });
+    }
+
+    const corpusData = build100Dataset();
+    const animals = ["🐱", "🐶", "🦊", "🐰", "🐻", "🐼"];
+    let availableIndices = [...Array(corpusData.length).keys()];
+    let currentData = null;
+    let selectedSentenceIndex = 0;
+    let recognition = null;
+
+    function getSimilarity(s1, s2) {
+        let longer = s1, shorter = s2;
+        if (s1.length < s2.length) { longer = s2; shorter = s1; }
+        let longerLength = longer.length;
+        if (longerLength === 0) return 1.0;
+        
+        let costs = new Array();
+        for (let i = 0; i <= s1.length; i++) {
+            let lastValue = i;
+            for (let j = 0; j <= s2.length; j++) {
+                if (i == 0) costs[j] = j;
+                else {
+                    if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        costs[j - 1] = lastValue;
+                        lastValue = newValue;
+                    }
+                }
+            }
+            if (i > 0) costs[s2.length] = lastValue;
+        }
+        return (longerLength - costs[s2.length]) / parseFloat(longerLength);
+    }
+
+    function loadNextQuestion() {
+        if (availableIndices.length === 0) {
+            alert("🎉 100개 코퍼스 문제를 모두 완수하셨습니다! 다시 시작합니다.");
+            availableIndices = [...Array(corpusData.length).keys()];
+        }
+
+        document.getElementById("animal-avatar").innerText = animals[Math.floor(Math.random() * animals.length)];
+        selectedSentenceIndex = 0;
+        
+        document.getElementById("progress-text").innerText = `남은 문제: ${availableIndices.length} / ${corpusData.length}`;
+        document.getElementById("sentences-section").style.display = "none";
+        document.getElementById("feedback-card").style.display = "none";
+        document.getElementById("next-btn").style.display = "none";
+        document.getElementById("stt-result").innerText = "인식 준비 완료! 버튼을 누르고 읽어보세요.";
+
+        const randomPos = Math.floor(Math.random() * availableIndices.length);
+        const dataIndex = availableIndices[randomPos];
+        availableIndices.splice(randomPos, 1);
+
+        currentData = corpusData[dataIndex];
+        currentData.originalIndex = dataIndex;
+
+        document.getElementById("question-meaning").innerText = `"${currentData.meaning}"`;
+
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = "";
+
+        currentData.options.forEach((opt) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(opt, btn);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedOption, buttonEl) {
+        const allButtons = document.querySelectorAll(".option-btn");
+        allButtons.forEach(btn => btn.disabled = true);
+
+        if (selectedOption === currentData.correct) {
+            buttonEl.classList.add("correct");
+        } else {
+            buttonEl.classList.add("incorrect");
+            allButtons.forEach(btn => {
+                if (btn.innerText === currentData.correct) btn.classList.add("correct");
+            });
+
+            if (!availableIndices.includes(currentData.originalIndex)) {
+                availableIndices.push(currentData.originalIndex);
+            }
+        }
+
+        showSentences();
+        document.getElementById("next-btn").style.display = "block";
+    }
+
+    function showSentences() {
+        const sentencesSection = document.getElementById("sentences-section");
+        const sentencesList = document.getElementById("sentences-list");
+        sentencesList.innerHTML = "";
+
+        currentData.sentences.forEach((s, idx) => {
+            const card = document.createElement("div");
+            card.className = "sentence-card";
+            card.id = `sentence-card-${idx}`;
+            card.innerHTML = `
+                <div style="font-weight:bold; font-size:0.95rem; color:#2D3748;">${idx + 1}. ${s.en}</div>
+                <div style="font-size:0.85rem; color:#718096; margin-bottom:8px;">${s.ko}</div>
+                <button class="btn" onclick="speak('${s.en.replace(/'/g, "\\'")}')">🔊 음성 듣기</button>
+                <button class="btn" style="background-color:#3182CE; margin-left:5px;" onclick="selectSentenceForPractice(${idx})">🎤 연습하기</button>
+            `;
+            sentencesList.appendChild(card);
+        });
+
+        sentencesSection.style.display = "block";
+        selectSentenceForPractice(0);
+    }
+
+    function selectSentenceForPractice(index) {
+        selectedSentenceIndex = index;
+
+        document.querySelectorAll(".sentence-card").forEach((card, idx) => {
+            if (idx === index) {
+                card.classList.add("selected");
+            } else {
+                card.classList.remove("selected");
+            }
+        });
+
+        const targetEn = currentData.sentences[index].en;
+        document.getElementById("target-sentence-info").innerHTML = `🎯 선택된 문장 (${index + 1}번): <br><strong>"${targetEn}"</strong>`;
+        document.getElementById("feedback-card").style.display = "none";
+        document.getElementById("stt-result").innerText = "인식 준비 완료! [🎤 녹음 시작하기]를 누르세요.";
+    }
+
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function startRecording() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Chrome 브라우저를 사용해 주세요.");
+            return;
+        }
+
+        const sttResult = document.getElementById("stt-result");
+
+        try {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                sttResult.innerText = "🎙️ IPA 분석 엔진이 듣고 있습니다... 크게 말씀하세요!";
+                sttResult.style.color = "#2563EB";
+            };
+
+            recognition.onresult = (event) => {
+                const userSpeech = event.results[0][0].transcript;
+                sttResult.innerText = `인식된 문장: "${userSpeech}"`;
+                sttResult.style.color = "#059669";
+                analyzePhoneticCoaching(userSpeech, currentData.sentences[selectedSentenceIndex]);
+            };
+
+            recognition.onerror = () => {
+                sttResult.innerText = "⚠️ 인식 실패. 다시 시도해 주세요.";
+                sttResult.style.color = "#DC2626";
+            };
+
+            recognition.start();
+        } catch (e) {
+            sttResult.innerText = "⚠️ 녹음을 시작할 수 없습니다.";
+        }
+    }
+
+    function analyzePhoneticCoaching(userText, targetSentenceObj) {
+        const targetWords = targetSentenceObj.en.replace(/[^\w\s]/gi, '').split(/\s+/);
+        const userWords = userText.toLowerCase().replace(/[^\w\s]/gi, '').split(/\s+/);
+
+        const container = document.getElementById("word-analysis-box");
+        const detailBox = document.getElementById("feedback-detail-box");
+        container.innerHTML = "";
+        detailBox.innerHTML = "";
+
+        let feedbackHTML = "";
+
+        targetWords.forEach((targetWord) => {
+            const lowerTarget = targetWord.toLowerCase();
+            const badge = document.createElement("div");
+            
+            const targetIPA = getIPA(lowerTarget);
+            const pData = getDynamicPhoneticData(lowerTarget);
+
+            let isMatched = false;
+            userWords.forEach(uWord => {
+                if (getSimilarity(lowerTarget, uWord) >= 0.8) {
+                    isMatched = true;
+                }
+            });
+
+            if (isMatched) {
+                badge.className = "phoneme-badge good";
+                badge.innerHTML = `<div>${targetWord}</div><div class="ipa-text">${targetIPA}</div>`;
+            } else {
+                badge.className = "phoneme-badge bad";
+                badge.innerHTML = `<div>${targetWord}</div><div class="ipa-text">${targetIPA}</div>`;
+                
+                feedbackHTML += `
+                    <div class="feedback-item">
+                        <div class="feedback-item-title">📌 단어 진단: '${targetWord}' <span style="font-weight:normal; font-family:sans-serif; color:#3182CE;">${targetIPA}</span></div>
+                        <div>• <strong>음소 및 조음 위치:</strong> ${pData.tip}</div>
+                        <div>• <strong>강세 및 억양:</strong> 주강세 위치는 <code>${pData.stress}</code>입니다. 고저차를 명확하게 주어 박자감을 살리세요.</div>
+                        <div>• <strong>연음 및 리듬(Coarticulation):</strong> <code>${pData.linking}</code> 연음 규칙을 활용해 기류 끊김 없이 한 호흡으로 이어 읽으세요.</div>
+                    </div>
+                `;
+            }
+
+            container.appendChild(badge);
+        });
+
+        if (feedbackHTML === "") {
+            feedbackHTML = `
+                <div class="feedback-item" style="border-left-color:#48BB78;">
+                    <div class="feedback-item-title" style="color:#2F855A;">🎉 완벽한 IPA 발음 및 리듬 달성!</div>
+                    <div>• 선택하신 문장의 음소 조음 위치, 주강세 위치, 자음-모음 연음 및 박자감이 원어민 표준 발음 기준에 완벽히 부합합니다.</div>
+                </div>
+            `;
+        }
+
+        detailBox.innerHTML = feedbackHTML;
+        document.getElementById("feedback-card").style.display = "block";
+    }
+
+    window.onload = loadNextQuestion;
+</script>
+
+</body>
+</html>
