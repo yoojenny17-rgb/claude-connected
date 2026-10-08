@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>유치원 CVC 발음 맞추기 마법 게임 🪄</title>
+  <style>
+    :root {
+      --bg-color: #FFF9F2;
+      --text-color: #5D5456;
+      --primary-green: #A8E6CF;
+      --primary-pink: #FF8B94;
+
+      /* 화면 크기에 맞춰 자동으로 커지는 기준 크기 (빔프로젝터용) */
+      --card-w: min(19vw, 36vh);
+      --card-h: calc(var(--card-w) * 1.37);
+      --btn-font: min(2.1vw, 4vh);
+      --btn-pad: min(1.6vw, 2.6vh);
+      --gap: min(1.6vw, 2.8vh);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Nanum Gothic', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 3vh 3vw;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr minmax(0, 30vw);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        "header header"
+        "stage  controls";
+      column-gap: 3vw;
+      row-gap: 2vh;
+    }
+
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    header {
+      grid-area: header;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: min(4.2vw, 7.5vh);
+      margin: 0;
+      color: #6C5B7B;
+      line-height: 1.2;
+    }
+
+    .fullscreen-btn {
+      position: fixed;
+      top: 1.5vh;
+      right: 1.2vw;
+      border: none;
+      border-radius: 12px;
+      background: rgba(108, 91, 123, 0.12);
+      color: #6C5B7B;
+      font-size: min(1.4vw, 2.4vh);
+      padding: 0.8vh 1vw;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .fullscreen-btn:hover {
+      background: rgba(108, 91, 123, 0.22);
+    }
+
+    /* ===== 왼쪽: 카드 + 타이머 + 단어 ===== */
+    .stage {
+      grid-area: stage;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .card-container {
+      display: flex;
+      gap: calc(var(--card-w) * 0.12);
+      justify-content: center;
+      perspective: 1600px;
+    }
+
+    .card {
+      width: var(--card-w);
+      height: var(--card-h);
+      cursor: pointer;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    }
+
+    .card:not(.flipped):hover {
+      transform: translateY(-1.5vh);
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: calc(var(--card-w) * 0.16);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 2vh 3.5vh rgba(0,0,0,0.15),
+        inset 0 6px 10px rgba(255,255,255,0.8),
+        inset 0 -6px 10px rgba(0,0,0,0.1);
+      border: calc(var(--card-w) * 0.03) solid #FFF;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 50%, #A1C4FD 100%);
+      font-size: calc(var(--card-w) * 0.55);
+      color: #FFF;
+      font-weight: bold;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .card-front {
+      background: linear-gradient(145deg, #FFFFFF, #FFF0F5);
+      font-size: calc(var(--card-w) * 0.68);
+      line-height: 1;
+      font-weight: bold;
+      color: #5D5456;
+      transform: rotateY(180deg);
+      border-color: #FFD1DC;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+      padding-bottom: calc(var(--card-w) * 0.08);
+    }
+
+    .timer-container {
+      width: calc(var(--card-w) * 3.24);
+      height: min(2.6vh, 1.6vw);
+      background-color: #EFEFEF;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4vh;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+      visibility: hidden;
+    }
+
+    .timer-bar {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #FFB7B2, #FFDAC1, #B5EAD7);
+      border-radius: 999px;
+      transition: width 0.1s linear;
+    }
+
+    .word-reveal {
+      font-size: calc(var(--card-w) * 0.5);
+      line-height: 1.1;
+      font-weight: bold;
+      color: #6C5B7B;
+      height: calc(var(--card-w) * 0.55);
+      margin-top: 1.5vh;
+      text-transform: lowercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== 오른쪽: 버튼 패널 ===== */
+    .controls {
+      grid-area: controls;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      gap: var(--gap);
+      min-height: 0;
+    }
+
+    .btn {
+      border: none;
+      border-radius: min(1.6vw, 2.8vh);
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0.8vh 0 rgba(0,0,0,0.1);
+      transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--btn-font);
+      padding: var(--btn-pad);
+      line-height: 1.2;
+      text-align: center;
+      word-break: keep-all;
+    }
+
+    .btn:hover:not(:disabled) {
+      filter: brightness(1.04) saturate(1.1);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0.6vh);
+      box-shadow: none;
+    }
+
+    .btn-magic {
+      align-self: center;
+      width: min(11vw, 19vh);
+      height: min(11vw, 19vh);
+      padding: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #E2F0CB, #C7CEEA);
+      box-shadow: 0 1vh 0 #B5C0D8;
+      margin-bottom: 1vh;
+    }
+
+    .btn-magic svg {
+      width: 58%;
+      height: 58%;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    }
+
+    .btn-magic:not(:disabled) {
+      animation: glow 1.4s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 1vh 0 #B5C0D8, 0 0 0 0 rgba(255, 209, 220, 0.9); }
+      50%      { box-shadow: 0 1vh 0 #B5C0D8, 0 0 0 1.6vh rgba(255, 209, 220, 0); }
+    }
+
+    .btn-magic:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .record-panel,
+    .teacher-panel {
+      display: flex;
+      gap: var(--gap);
+    }
+
+    .record-panel .btn,
+    .teacher-panel .btn {
+      flex: 1;
+    }
+
+    .btn-record {
+      background-color: #FFDAC1;
+      color: #7A4B2E;
+    }
+
+    .btn-record.recording {
+      background-color: #FF6B6B;
+      color: #FFFFFF;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .btn-play-rec {
+      background-color: #C7CEEA;
+      color: #3D405B;
+    }
+
+    .btn-correct {
+      background-color: var(--primary-green);
+      color: #2E6B56;
+      font-size: calc(var(--btn-font) * 1.1);
+    }
+
+    .btn-wrong {
+      background-color: var(--primary-pink);
+      color: #7A2E2E;
+      font-size: calc(var(--btn-font) * 1.1);
+    }
+
+    .btn-next {
+      background-color: #FFE5B4;
+      color: #7A5C00;
+      font-size: calc(var(--btn-font) * 1.1);
+    }
+
+    /* 세로 화면(태블릿·휴대폰)에서는 위아래로 배치 */
+    @media (max-aspect-ratio: 1/1) {
+      :root {
+        --card-w: min(26vw, 22vh);
+        --btn-font: min(4.4vw, 3vh);
+        --btn-pad: min(3vw, 1.8vh);
+        --gap: 1.6vh;
+      }
+
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas:
+          "header"
+          "stage"
+          "controls";
+        padding: 2vh 4vw;
+      }
+
+      h1 { font-size: min(6vw, 4vh); }
+
+      .btn-magic {
+        width: min(20vw, 11vh);
+        height: min(20vw, 11vh);
+      }
+
+      .fullscreen-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()">⛶ 전체화면</button>
+
+  <header>
+    <h1>🪄 파닉스 발음 맞추기 게임</h1>
+  </header>
+
+  <main class="stage">
+    <div class="card-container">
+      <div class="card" id="card0" onclick="flipCard(0)">
+        <div class="card-face card-back">?</div>
+        <div class="card-face card-front" id="text0">c</div>
+      </div>
+      <div class="card" id="card1" onclick="flipCard(1)">
+        <div class="card-face card-back">?</div>
+        <div class="card-face card-front" id="text1">a</div>
+      </div>
+      <div class="card" id="card2" onclick="flipCard(2)">
+        <div class="card-face card-back">?</div>
+        <div class="card-face card-front" id="text2">t</div>
+      </div>
+    </div>
+
+    <div class="timer-container" id="timerContainer">
+      <div class="timer-bar" id="timerBar"></div>
+    </div>
+
+    <div class="word-reveal" id="wordReveal"></div>
+  </main>
+
+  <div class="controls">
+    <button class="btn btn-magic" id="magicBtn" onclick="playFullWordAudio()" disabled>
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 52L40 24" stroke="#7A5C00" stroke-width="6" stroke-linecap="round"/>
+        <path d="M40 24L46 18" stroke="#FFE5B4" stroke-width="6" stroke-linecap="round"/>
+        <path d="M48 10L50 14L54 16L50 18L48 22L46 18L42 16L46 14L48 10Z" fill="#FF8B94"/>
+        <path d="M24 10L25 12L27 13L25 14L24 16L23 14L21 13L23 12L24 10Z" fill="#FFD1DC"/>
+        <path d="M50 36L51 38L53 39L51 40L50 42L49 40L47 39L49 38L50 36Z" fill="#B5EAD7"/>
+      </svg>
+    </button>
+
+    <div class="record-panel">
+      <button class="btn btn-record" id="recordBtn" onclick="toggleRecording()">🎙️ 목소리 녹음하기</button>
+      <button class="btn btn-play-rec" id="playRecBtn" onclick="playRecordedAudio()" style="display: none;">🎧 내 목소리 듣기</button>
+    </div>
+
+    <div class="teacher-panel">
+      <button class="btn btn-correct" onclick="onCorrectPressed()">⭕ Correct!</button>
+      <button class="btn btn-wrong" onclick="playWrongSound()">❌ Try again!</button>
+    </div>
+
+    <button class="btn btn-next" onclick="nextQuestion()">✨ 다음 단어 문제 ➔</button>
+  </div>
+
+  <script>
+    const cvcWords = [
+      'bad','dad','had','lad','mad','pad','sad','bag','gag','lag','nag','rag','tag','wag',
+      'bam','dam','jam','ham','ram','yam','ban','can','fan','man','pan','ran','tan','van',
+      'cap','gap','lap','map','nap','rap','tap','zap','bat','cat','fat','hat','mat','pat','rat','sat',
+      'bed','fed','led','red','wed','den','hen','men','pen','ten','bet','get','jet','let','met','net','pet','set','wet',
+      'bid','did','hid','lid','rid','big','dig','fig','gig','jig','pig','rig','wig','dim','him','rim','sim',
+      'bin','fin','pin','sin','tin','win','dip','hip','lip','rip','sip','tip','zip','bit','fit','hit','kit','lit','pit','sit',
+      'bog','cog','dog','fog','jog','log','cop','hop','mop','pop','top','cot','dot','hot','lot','not','pot','rot',
+      'cub','rub','sub','tub','bug','dug','hug','jug','mug','rug','tug','gum','hum','mum','sum','bun','fun','run','sun','cut','gut','hut','nut'
+    ];
+
+    let remainingWords = [...cvcWords];
+    let currentWord = "";
+    let flippedCards = [false, false, false];
+    let timerInterval = null;
+
+    // 모바일 오디오 컨텍스트 지연 생성
+    let audioCtx = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedAudioElement = null;
+    let isRecording = false;
+
+    // 모바일 전용 AudioContext 해제 함수
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // 첫 화면 터치 시 스마트폰 오디오 활성화
+    window.addEventListener('touchstart', initAudioContext, { once: true });
+    window.addEventListener('click', initAudioContext, { once: true });
+
+    window.onload = () => {
+      initConfettiCanvas();
+      nextQuestion();
+    };
+
+    // 전체화면 전환 (빔프로젝터 수업용)
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      document.getElementById('fullscreenBtn').innerText =
+        document.fullscreenElement ? '✕ 전체화면 끄기' : '⛶ 전체화면';
+    });
+
+    function nextQuestion() {
+      clearInterval(timerInterval);
+      if (remainingWords.length === 0) {
+        remainingWords = [...cvcWords];
+      }
+      const randomIndex = Math.floor(Math.random() * remainingWords.length);
+      currentWord = remainingWords.splice(randomIndex, 1)[0];
+
+      flippedCards = [false, false, false];
+      document.getElementById('wordReveal').innerText = "";
+      document.getElementById('magicBtn').disabled = true;
+      document.getElementById('timerContainer').style.visibility = 'hidden';
+
+      resetRecordingState();
+
+      for (let i = 0; i < 3; i++) {
+        const card = document.getElementById(`card${i}`);
+        card.classList.remove('flipped');
+        document.getElementById(`text${i}`).innerText = currentWord[i].toLowerCase();
+      }
+    }
+
+    function flipCard(index) {
+      initAudioContext();
+      if (flippedCards[index]) return;
+
+      const card = document.getElementById(`card${index}`);
+      card.classList.add('flipped');
+      flippedCards[index] = true;
+
+      playPhoneme(currentWord[index]);
+
+      if (flippedCards.every(status => status === true)) {
+        startVisualTimer();
+      }
+    }
+
+    function playPhoneme(char) {
+      const utterance = new SpeechSynthesisUtterance(char);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.6;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function startVisualTimer() {
+      const container = document.getElementById('timerContainer');
+      const bar = document.getElementById('timerBar');
+      container.style.visibility = 'visible';
+      bar.style.width = '100%';
+
+      let duration = 10000;
+      let startTime = Date.now();
+
+      timerInterval = setInterval(() => {
+        let elapsedTime = Date.now() - startTime;
+        let remainingPercent = Math.max(0, 100 - (elapsedTime / duration) * 100);
+        bar.style.width = remainingPercent + '%';
+
+        if (remainingPercent <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('magicBtn').disabled = false;
+        }
+      }, 50);
+    }
+
+    function playFullWordAudio() {
+      initAudioContext();
+      document.getElementById('wordReveal').innerText = currentWord.toLowerCase();
+      const utterance = new SpeechSynthesisUtterance(currentWord);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.8;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // 모바일 크로스 브라우저 녹음 로직
+    async function toggleRecording() {
+      initAudioContext();
+      const recordBtn = document.getElementById('recordBtn');
+
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+          // iOS Safari 및 Android 호환 mimeType 설정
+          let mimeType = 'audio/webm';
+          if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            mimeType = 'audio/mp4';
+          } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+            mimeType = 'audio/aac';
+          }
+
+          mediaRecorder = new MediaRecorder(stream, { mimeType });
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            // 모바일 오디오 태그 재생 호환성 보장
+            if (recordedAudioElement) {
+              recordedAudioElement.pause();
+            }
+            recordedAudioElement = new Audio(audioUrl);
+            document.getElementById('playRecBtn').style.display = 'flex';
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          recordBtn.innerText = '🛑 녹음 중지하기';
+          recordBtn.classList.add('recording');
+        } catch (err) {
+          alert('설정에서 마이크 사용 권한을 허용해 주세요!');
+        }
+      } else {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+          mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        }
+        isRecording = false;
+        recordBtn.innerText = '🎙️ 다시 녹음하기';
+        recordBtn.classList.remove('recording');
+      }
+    }
+
+    function playRecordedAudio() {
+      initAudioContext();
+      if (recordedAudioElement) {
+        recordedAudioElement.play().catch(e => alert('재생 오류가 발생했습니다.'));
+      }
+    }
+
+    function resetRecordingState() {
+      if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      }
+      isRecording = false;
+      recordedAudioElement = null;
+      const recordBtn = document.getElementById('recordBtn');
+      recordBtn.innerText = '🎙️ 목소리 녹음하기';
+      recordBtn.classList.remove('recording');
+      document.getElementById('playRecBtn').style.display = 'none';
+    }
+
+    function onCorrectPressed() {
+      initAudioContext();
+      playCorrectSound();
+      triggerConfetti();
+    }
+
+    function playCorrectSound() {
+      initAudioContext();
+      const notes = [523.25, 659.25, 783.99, 880.00, 1046.50];
+      notes.forEach((freq, index) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.07);
+
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime + index * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.07 + 0.35);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(audioCtx.currentTime + index * 0.07);
+        osc.stop(audioCtx.currentTime + index * 0.07 + 0.35);
+      });
+    }
+
+    function playWrongSound() {
+      initAudioContext();
+      const osc = audioCtx.createOscillator();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      const mod = audioCtx.createOscillator();
+      const modGain = audioCtx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+      osc.frequency.linearRampToValueAtTime(10, audioCtx.currentTime + 0.6);
+
+      filter.type = 'lowpass';
+      filter.Q.value = 15;
+      filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+
+      mod.type = 'square';
+      mod.frequency.setValueAtTime(45, audioCtx.currentTime);
+      mod.frequency.linearRampToValueAtTime(10, audioCtx.currentTime + 0.6);
+
+      modGain.gain.setValueAtTime(120, audioCtx.currentTime);
+      modGain.gain.linearRampToValueAtTime(10, audioCtx.currentTime + 0.6);
+
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+      mod.connect(modGain);
+      modGain.connect(osc.frequency);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      mod.start(audioCtx.currentTime);
+      osc.start(audioCtx.currentTime);
+
+      mod.stop(audioCtx.currentTime + 0.6);
+      osc.stop(audioCtx.currentTime + 0.6);
+    }
+
+    let canvas, ctx;
+    let particles = [];
+    const colors = ['#FF9A9E', '#FECFEF', '#A1C4FD', '#A8E6CF', '#FFD1DC', '#FFE5B4'];
+
+    function initConfettiCanvas() {
+      canvas = document.getElementById('confettiCanvas');
+      ctx = canvas.getContext('2d');
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function triggerConfetti() {
+      particles = [];
+      // 큰 화면일수록 꽃가루도 크고 넓게 퍼지도록
+      const scale = Math.max(1, Math.min(canvas.width, canvas.height * 1.6) / 800);
+      const particleCount = Math.round(100 * scale);
+
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2 + 50 * scale,
+          vx: (Math.random() - 0.5) * 18 * scale,
+          vy: (Math.random() - 0.8) * 16 * scale,
+          gravity: 0.35 * scale,
+          size: (Math.random() * 8 + 6) * scale,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          vRot: (Math.random() - 0.5) * 10,
+          opacity: 1
+        });
+      }
+
+      requestAnimationFrame(updateConfetti);
+    }
+
+    function updateConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let activeParticles = 0;
+
+      particles.forEach((p) => {
+        if (p.opacity > 0) {
+          activeParticles++;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.rotation += p.vRot;
+          p.opacity -= 0.012;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.globalAlpha = Math.max(0, p.opacity);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        }
+      });
+
+      if (activeParticles > 0) {
+        requestAnimationFrame(updateConfetti);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+  </script>
+</body>
+</html>
