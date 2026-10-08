@@ -186,6 +186,32 @@
       margin-top: 1.5vh;
       text-transform: lowercase;
       letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--card-w) * 0.15);
+    }
+
+    .word-picture {
+      font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+      font-size: calc(var(--card-w) * 0.5);
+      line-height: 1;
+      filter: drop-shadow(0 0.6vh 0.8vh rgba(0,0,0,0.15));
+    }
+
+    .word-picture.show {
+      animation: pop-in 0.6s cubic-bezier(0.3, 1.6, 0.5, 1), wiggle 2s ease-in-out 0.6s infinite;
+    }
+
+    @keyframes pop-in {
+      0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0); }
+      25%      { transform: rotate(-6deg); }
+      75%      { transform: rotate(6deg); }
     }
 
     /* ===== 오른쪽: 버튼 패널 ===== */
@@ -368,7 +394,10 @@
       <div class="timer-bar" id="timerBar"></div>
     </div>
 
-    <div class="word-reveal" id="wordReveal"></div>
+    <div class="word-reveal">
+      <span class="word-picture" id="wordPicture"></span>
+      <span id="wordReveal"></span>
+    </div>
   </main>
 
   <div class="controls">
@@ -406,6 +435,34 @@
       'bog','cog','dog','fog','jog','log','cop','hop','mop','pop','top','cot','dot','hot','lot','not','pot','rot',
       'cub','rub','sub','tub','bug','dug','hug','jug','mug','rug','tug','gum','hum','mum','sum','bun','fun','run','sun','cut','gut','hut','nut'
     ];
+
+    // 단어별 그림 (그림으로 나타내기 어려운 단어는 비워 둠)
+    const wordPictures = {
+      dad:'👨‍👧', lad:'🧒', mad:'😠', pad:'📝', sad:'😢', bag:'👜', tag:'🏷️', wag:'🐕',
+      bam:'💥', dam:'🦫', jam:'🍓', ham:'🍖', ram:'🐏', yam:'🍠',
+      ban:'🚫', can:'🥫', man:'👨', pan:'🍳', ran:'🏃', tan:'🏖️', van:'🚐',
+      cap:'🧢', map:'🗺️', nap:'😴', rap:'🎤', tap:'🚰', zap:'⚡',
+      bat:'🦇', cat:'🐱', hat:'🎩', rat:'🐭', sat:'🪑',
+      bed:'🛏️', fed:'🍼', red:'🔴', wed:'💒', hen:'🐔', men:'👬', pen:'🖊️', ten:'🔟',
+      jet:'✈️', met:'🤝', net:'🥅', pet:'🐹', wet:'💦',
+      hid:'🙈', big:'🐘', dig:'⛏️', gig:'🎸', jig:'💃', pig:'🐷', dim:'🔅', him:'👦',
+      bin:'🗑️', fin:'🦈', pin:'📌', tin:'🥫', win:'🏆', lip:'👄', sip:'🥤', zip:'🤐',
+      fit:'💪', hit:'⚾', kit:'🧰', lit:'🕯️', sit:'🪑',
+      cog:'⚙️', dog:'🐶', fog:'🌫️', jog:'🏃', log:'🪵', cop:'👮', hop:'🐰', mop:'🧹', pop:'🎈',
+      dot:'⚫', hot:'🔥', not:'🙅', pot:'🍲',
+      cub:'🐻', sub:'🥪', tub:'🛁', bug:'🐞', dug:'⛏️', hug:'🤗', mug:'☕',
+      hum:'🎶', mum:'👩', sum:'➕', bun:'🍞', fun:'🎉', run:'🏃', sun:'☀️', cut:'✂️', hut:'🛖', nut:'🥜'
+    };
+
+    function showWordPicture() {
+      const picture = document.getElementById('wordPicture');
+      const emoji = wordPictures[currentWord] || '';
+      if (picture.innerText === emoji && emoji) return;
+      picture.innerText = emoji;
+      picture.classList.remove('show');
+      void picture.offsetWidth; // 애니메이션 다시 시작
+      if (emoji) picture.classList.add('show');
+    }
 
     let remainingWords = [...cvcWords];
     let currentWord = "";
@@ -462,6 +519,9 @@
 
       flippedCards = [false, false, false];
       document.getElementById('wordReveal').innerText = "";
+      const picture = document.getElementById('wordPicture');
+      picture.innerText = "";
+      picture.classList.remove('show');
       document.getElementById('magicBtn').disabled = true;
       document.getElementById('timerContainer').style.visibility = 'hidden';
 
@@ -520,6 +580,7 @@
     function playFullWordAudio() {
       initAudioContext();
       document.getElementById('wordReveal').innerText = currentWord.toLowerCase();
+      showWordPicture();
       const utterance = new SpeechSynthesisUtterance(currentWord);
       utterance.lang = 'en-US';
       utterance.rate = 0.8;
