@@ -75,17 +75,6 @@ body.muted #muteBtn .off{display:block}
 @keyframes nodePop{0%{transform:scale(1)}40%{transform:scale(1.1)}100%{transform:scale(1)}}
 .nodebody{transform-box:fill-box;transform-origin:center}
 .startRow{display:flex;gap:3vmin;align-items:center;justify-content:center;flex-wrap:wrap}
-.modeBtn{position:relative;width:clamp(120px,22vmin,230px);height:clamp(86px,15vmin,156px);border-radius:3.2vmin;background:#fff;
-  border:.6vmin solid #EADFC4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4vmin;cursor:pointer;
-  box-shadow:0 .9vmin 0 #E3D3AD;transition:transform .15s}
-.modeBtn:active{transform:translateY(.5vmin)}
-.modeBtn.sel{border-color:#FFB547;background:#FFF5D9;box-shadow:0 .9vmin 0 #EFA43A,0 0 0 .7vmin #FFE3A6}
-.modeBtn .ic{height:56%;display:flex;justify-content:center}
-.modeBtn .ic svg{height:100%;width:auto}
-.modeBtn span{font-size:clamp(11px,1.6vmin,16px);color:#7a6a58;font-weight:700}
-.modeBtn .tag{position:absolute;left:-1.2vmin;top:-1.2vmin;width:clamp(28px,4.8vmin,46px);height:clamp(28px,4.8vmin,46px);border-radius:50%;
-  background:#fff;border:.45vmin solid #EADFC4;display:grid;place-items:center;font-weight:900;font-size:clamp(14px,2.6vmin,26px);color:#8a7558}
-.modeBtn.sel .tag{border-color:#FFB547;background:#FFD27A;color:#5a3e10}
 .playBtn{width:clamp(92px,17vmin,172px);height:clamp(92px,17vmin,172px);border-radius:50%;cursor:pointer;
   background:radial-gradient(circle at 35% 30%,#A6E6A0,#5FB86A 70%);border:.8vmin solid #fff;
   box-shadow:0 1vmin 0 #3F8F4F,0 1.6vmin 3vmin rgba(59,45,74,.18);display:grid;place-items:center;animation:pulse 1.8s ease-in-out infinite;padding:0}
@@ -126,9 +115,8 @@ body.picking .bush{filter:drop-shadow(0 0 .7vmin #FFF0A0)}
 body.picking .bush .bwrap{animation:want 1.1s ease-in-out infinite}
 @keyframes want{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
-#tray{flex:0 0 auto;height:var(--tray-h);display:none;align-items:center;justify-content:center;gap:var(--gap);
+#tray{flex:0 0 auto;height:var(--tray-h);display:flex;align-items:center;justify-content:center;gap:var(--gap);
   padding:0 3vw calc(18px + env(safe-area-inset-bottom)) 14vw;position:relative;z-index:6;transition:opacity .4s}
-body.mode-B #tray{display:flex}
 #tray.closed{opacity:0;pointer-events:none}
 .card{position:relative;width:var(--card-w);height:calc(var(--card-w) * 1.1);touch-action:none;cursor:grab;flex:0 0 auto}
 .card.dragging,.card.pressed{z-index:40}
@@ -147,9 +135,6 @@ body.mode-B #tray{display:flex}
 #sqMini{position:fixed;left:calc(1.2vmin + env(safe-area-inset-left));bottom:calc(2.2vh + env(safe-area-inset-bottom));width:clamp(64px,12vmin,140px);z-index:7;pointer-events:none;display:none}
 body[data-screen="game"] #sqMini{display:block}
 #sqMini svg{width:100%;height:auto;display:block;overflow:visible}
-#think{position:absolute;left:62%;bottom:80%;width:88%;opacity:0;transform:scale(.4);transform-origin:10% 100%;transition:opacity .3s,transform .4s cubic-bezier(.3,1.6,.5,1)}
-#think.on{opacity:1;transform:scale(1)}
-#think svg{animation:pulse 1.3s ease-in-out infinite}
 
 #nextBtn{position:fixed;right:calc(3vw + env(safe-area-inset-right));bottom:calc(5vh + env(safe-area-inset-bottom));width:clamp(84px,16vmin,160px);height:clamp(84px,16vmin,160px);
   border-radius:50%;border:.8vmin solid #fff;background:radial-gradient(circle at 35% 30%,#9FD9FF,#4DA3F0 72%);
@@ -204,6 +189,8 @@ body[data-screen="game"] #sqMini{display:block}
 #letterGrid{display:grid;grid-template-columns:repeat(13,1fr);gap:5px}
 #letterGrid button{aspect-ratio:1;border-radius:9px;border:2px solid #E7DCC4;background:#fff;font-weight:900;font-size:clamp(13px,2.4vw,18px);cursor:pointer;opacity:.45;padding:0}
 #letterGrid button.on{opacity:1;border-color:currentColor;background:#FFFDF2;box-shadow:inset 0 -3px 0 rgba(59,45,74,.08)}
+#voiceSel{max-width:240px;padding:7px 8px;border-radius:9px;border:1.5px solid #E2D5B8;background:#fff;font-size:13px}
+.quickBtn{border:1.5px solid #E2D5B8;background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;color:#6b5c4d;white-space:nowrap}
 .warn{color:#D93650;font-size:13px;margin:6px 0 0;min-height:1em}
 .note{color:#9a8a76;font-size:12.5px;margin:4px 0 0;line-height:1.5}
 .panelFoot{display:flex;justify-content:flex-end;padding-top:14px}
@@ -231,9 +218,7 @@ body[data-screen="game"] #sqMini{display:block}
     <div class="title">알파벳 숲 탐험 <small>Alphabet Forest Adventure · 없어진 알파벳 찾기</small></div>
     <div id="map"></div>
     <div class="startRow">
-      <button class="modeBtn" data-mode="A" aria-label="A 모드: 말로 맞히기"><b class="tag">A</b><span class="ic"></span><span>말로 맞히기</span></button>
       <button class="playBtn" id="playBtn" aria-label="시작"></button>
-      <button class="modeBtn" data-mode="B" aria-label="B 모드: 끌어넣기"><b class="tag">B</b><span class="ic"></span><span>끌어넣기</span></button>
     </div>
   </section>
 
@@ -270,7 +255,7 @@ body[data-screen="game"] #sqMini{display:block}
   <button class="cbtn" id="gearBtn" aria-label="선생님 설정"></button>
 </div>
 
-<div id="sqMini"><div id="think"></div></div>
+<div id="sqMini"></div>
 <button id="nextBtn" aria-label="다음"></button>
 <div id="fx"></div>
 
@@ -280,8 +265,9 @@ body[data-screen="game"] #sqMini{display:block}
   <div class="panel">
     <h2><span id="gearIc"></span>선생님 설정</h2>
     <div class="srow"><label>외우는 시간</label><div class="seg" data-k="mem"><button data-v="5">5초</button><button data-v="8">8초</button><button data-v="12">12초</button></div></div>
-    <div class="srow"><label>정답 공개 <small>A모드</small></label><div class="seg" data-k="reveal"><button data-v="5">5초</button><button data-v="10">10초</button><button data-v="15">15초</button></div></div>
     <div class="srow"><label>글자 모양</label><div class="seg" data-k="caseMode"><button data-v="upper">대문자 ABC</button><button data-v="lower">소문자 abc</button><button data-v="mixed">섞어서 Aa</button></div></div>
+    <div class="srow"><label>목소리</label><div class="seg" data-k="pitch"><button data-v="normal">보통</button><button data-v="cute">귀엽게</button><button data-v="extra">아주 귀엽게</button></div></div>
+    <div class="srow"><label>목소리 종류 <small>기기마다 다름</small></label><div style="display:flex;gap:8px;align-items:center"><select id="voiceSel"></select><button class="quickBtn" id="voiceTest">▶ 들어보기</button></div></div>
     <div class="srow"><label>한 판 문제 수</label><div class="seg" data-k="qcount"><button data-v="3">3</button><button data-v="5">5</button><button data-v="10">10</button></div></div>
     <div class="srow col">
       <label>출제 범위 <small id="poolInfo"></small></label>
@@ -290,7 +276,7 @@ body[data-screen="game"] #sqMini{display:block}
       </div>
       <div id="letterGrid"></div>
       <p class="warn" id="poolWarn"></p>
-      <p class="note">체크한 글자 중에서 한 화면에 최대 10개가 나옵니다. 10개보다 적게 고르면 고른 개수만큼 나와요.<br>같은 색 계열 글자(예: A·M)는 가능하면 한 화면에 함께 나오지 않게 고릅니다.<br>바뀐 설정은 다음 문제부터 적용됩니다.</p>
+      <p class="note">한 화면에 나오는 알파벳: Stage 1은 5개, Stage 2는 7개, Stage 3은 10개입니다. 체크한 글자가 그보다 적으면 고른 개수만큼 나와요.<br>같은 색 계열 글자(예: A·M)는 가능하면 한 화면에 함께 나오지 않게 고릅니다.<br>바뀐 설정은 다음 문제부터 적용됩니다.</p>
     </div>
     <div class="panelFoot"><button class="okBtn" id="settingsOk">확인</button></div>
   </div>
@@ -394,7 +380,8 @@ function starPath(R, r){ let d = ''; for(let i = 0; i < 10; i++){ const a = -Mat
    설정 저장
    ========================================================= */
 const KEY = 'alphabetForest.v1';
-const DEFAULTS = {mem:8, reveal:10, caseMode:'upper', qcount:5, pool:LETTERS.slice(), muted:false, stage:1, mode:'A', badges:{1:0, 2:0, 3:0}};
+const DEFAULTS = {mem:8, caseMode:'upper', qcount:5, pool:LETTERS.slice(), muted:false, stage:1, pitch:'cute', voice:'', badges:{1:0, 2:0, 3:0}};
+const STAGE_COUNT = {1:5, 2:7, 3:10};
 const S = (() => {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e) {}
@@ -501,21 +488,27 @@ const SFX = {
 };
 
 /* 음성 (Web Speech API, 영어) */
-let VOICE = null;
-function pickVoice(){
-  try {
-    const vs = speechSynthesis.getVoices();
-    VOICE = vs.find(v => /en[-_]US/i.test(v.lang) && /Google|Samantha|Aria|Jenny|Ava|Female/i.test(v.name))
-         || vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
-  } catch(e) {}
+let VOICES = [];
+/* 귀여운 목소리 우선순위: 어린이 목소리(Ana, Junior) → 밝은 여성 목소리 */
+const CUTE_VOICES = [/Ana\b/i, /Junior/i, /Google US English/i, /Samantha/i, /Ava/i, /Jenny/i, /Aria/i, /Zira/i, /Karen/i, /Female/i];
+const PITCH = {normal:1.1, cute:1.55, extra:1.9};
+function loadVoices(){
+  try { VOICES = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); } catch(e) { VOICES = []; }
+  if($('#settings') && $('#settings').classList.contains('show')) renderVoices();
 }
-if('speechSynthesis' in window){ pickVoice(); try { speechSynthesis.onvoiceschanged = pickVoice; } catch(e) {} }
-function speak(text){
-  if(S.muted || !('speechSynthesis' in window)) return;
+function currentVoice(){
+  if(S.voice){ const v = VOICES.find(x => x.name === S.voice); if(v) return v; }
+  for(const re of CUTE_VOICES){ const v = VOICES.find(x => re.test(x.name) && /en[-_]US/i.test(x.lang)) || VOICES.find(x => re.test(x.name)); if(v) return v; }
+  return VOICES.find(v => /en[-_]US/i.test(v.lang)) || VOICES[0] || null;
+}
+if('speechSynthesis' in window){ loadVoices(); try { speechSynthesis.onvoiceschanged = loadVoices; } catch(e) {} }
+function speak(text, force){
+  if((S.muted && !force) || !('speechSynthesis' in window)) return;
   try {
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US'; if(VOICE) u.voice = VOICE;
-    u.rate = .8; u.pitch = 1.15; u.volume = 1;
+    const v = currentVoice();
+    u.lang = v ? v.lang : 'en-US'; if(v) u.voice = v;
+    u.rate = S.pitch === 'normal' ? .8 : .88; u.pitch = PITCH[S.pitch] || PITCH.cute; u.volume = 1;
     speechSynthesis.speak(u);
   } catch(e) {}
 }
@@ -693,9 +686,6 @@ const IC = {
   arrow:`<svg viewBox="0 0 24 24"><path d="M4 12h13M12 5.5l7 6.5-7 6.5" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   again:`<svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.2-5.1" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M18.5 3v5h-5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   map:`<svg viewBox="0 0 24 24"><path d="M3 7l5-2.5 8 3 5-2.5v12.5l-5 2.5-8-3-5 2.5z" fill="#fff" stroke="#9A6A20" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4.5v12.5M16 7.5V20" stroke="#9A6A20" stroke-width="1.6"/></svg>`,
-  bubble:`<svg viewBox="0 0 64 54"><path d="M8 10 Q8 3 15 3 H49 Q56 3 56 10 V31 Q56 38 49 38 H27 L15 49 L18 38 H15 Q8 38 8 31Z" fill="#fff" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M22 14 Q19 20.5 22 27 M30 11 Q25 20.5 30 30 M38 14 Q35 20.5 38 27" fill="none" stroke="#FF7AB8" stroke-width="3.2" stroke-linecap="round"/><circle cx="46" cy="20.5" r="3.5" fill="#FFC93C"/></svg>`,
-  finger:`<svg viewBox="0 0 64 64"><path d="M26 34 V10 Q26 4 32 4 Q38 4 38 10 V30" fill="#FFD9B8" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M18 34 Q18 28 23 28 H44 Q52 28 52 36 V46 Q52 60 38 60 H30 Q18 60 18 48Z" fill="#FFD9B8" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M38 30 V38 M45 31 V38" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/><path d="M6 14 Q2 10 6 6 M58 14 Q62 10 58 6" fill="none" stroke="#4D8DFF" stroke-width="3" stroke-linecap="round"/></svg>`,
-  think:`<svg viewBox="0 0 120 92"><path d="M14 14 Q14 4 26 4 H100 Q112 4 112 16 V56 Q112 68 100 68 H40 L18 86 L24 68 H26 Q14 68 14 56Z" fill="#fff" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/><path d="M36 22 Q30 36 36 50 M48 16 Q40 36 48 56" fill="none" stroke="#FF7AB8" stroke-width="5" stroke-linecap="round"/><path d="M66 30 Q66 20 76 20 Q86 20 86 29 Q86 35 80 38 Q76 40 76 46" fill="none" stroke="#4D8DFF" stroke-width="6.5" stroke-linecap="round"/><circle cx="76" cy="55" r="4.4" fill="#4D8DFF"/></svg>`,
   magnifier:`<svg viewBox="0 0 60 60"><path d="M38 38 L54 54" stroke="#8B5E3C" stroke-width="8" stroke-linecap="round"/><circle cx="25" cy="25" r="18" fill="#E8F7FF" fill-opacity=".55" stroke="#F0A800" stroke-width="6"/><path d="M15 20 Q18 13 26 12" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/><path d="M50 4 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#FFE27A" stroke="#F0B93A" stroke-width="1"/><path d="M6 46 l1.4 3.4 3.4 1.4 -3.4 1.4 -1.4 3.4 -1.4 -3.4 -3.4 -1.4 3.4 -1.4z" fill="#FFE27A" stroke="#F0B93A" stroke-width="1"/></svg>`
 };
 const starIcon = (x, y, s = 1, col = '#FFC93C') => `<path transform="translate(${x} ${y}) scale(${s})" d="${starPath(14, 6.5)}" fill="${col}" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>`;
@@ -798,7 +788,6 @@ function updateStart(){
   });
   const [x, y] = NODES[S.stage];
   $('#mapSq').style.transform = `translate(${x}px,${y}px)`;
-  document.querySelectorAll('.modeBtn').forEach(b => b.classList.toggle('sel', b.dataset.mode === S.mode));
 }
 
 /* =========================================================
@@ -812,7 +801,7 @@ function clearFx(){ $('#fx').innerHTML = ''; }
 function goMap(){
   G.gen++; Clock.timers = []; G.phase = 'idle';
   try { speechSynthesis.cancel(); } catch(e) {}
-  clearFx(); hideNext(); setThink(false); document.body.classList.remove('picking');
+  clearFx(); hideNext(); document.body.classList.remove('picking');
   show('start'); updateStart();
 }
 
@@ -821,8 +810,7 @@ function goMap(){
    ========================================================= */
 function startGame(){
   SFX.init();
-  G.stage = S.stage; G.mode = S.mode; G.total = S.qcount; G.q = 0; G.prevHidden = [];
-  document.body.classList.toggle('mode-B', G.mode === 'B');
+  G.stage = S.stage; G.total = S.qcount; G.q = 0; G.prevHidden = [];
   renderHud();
   show('game');
   nextQ();
@@ -834,7 +822,7 @@ function caseFor(){
 }
 function pickLetters(){
   const pool = shuffle(S.pool.filter(c => LETTERS.includes(c)));
-  const n = Math.min(10, pool.length);
+  const n = Math.min(STAGE_COUNT[G.stage] || 10, pool.length);
   const used = new Set(), out = [];
   for(const c of pool){ if(out.length >= n) break; if(!used.has(FAMILY[c])){ out.push(c); used.add(FAMILY[c]); } }
   /* 범위가 좁아 피할 수 없을 때만 같은 색 계열 허용 */
@@ -843,7 +831,7 @@ function pickLetters(){
 }
 function nextQ(){
   G.gen++; Clock.timers = [];
-  clearFx(); hideNext(); setThink(false); setReveal(false);
+  clearFx(); hideNext(); setReveal(false);
   document.body.classList.remove('picking');
   G.wrong = 0; G.hint = false; G.filled = new Set(); G.selected = null; G.busy = false; G.drag = null; G.phase = 'memo';
   const letters = pickLetters(), n = letters.length;
@@ -885,11 +873,9 @@ function setExpr(i, expr){
 }
 function layout(){
   if(document.body.dataset.screen !== 'game' || !G.items) return;
-  if(G.mode === 'B'){
-    const th = Math.max(110, Math.min(250, innerHeight * .27));
-    document.documentElement.style.setProperty('--tray-h', th + 'px');
-    layoutTray();
-  }
+  const th = Math.max(110, Math.min(250, innerHeight * .27));
+  document.documentElement.style.setProperty('--tray-h', th + 'px');
+  layoutTray();
   const f = $('#field'), cs = getComputedStyle(f);
   const W = f.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   const H = f.clientHeight - 10;
@@ -960,23 +946,18 @@ function hideSlot(i){
 function startGuess(){
   G.phase = 'guess';
   setReveal(true);
-  if(G.mode === 'A'){
-    setThink(true);
-    after(S.reveal * 1000, revealRest);
-  } else {
-    buildTray();
-  }
+  buildTray();
 }
 
 /* 정답 공개 (A모드 자동 / 선생님 버튼) */
 function revealRest(){
   if(G.phase !== 'guess') return;
   G.phase = 'reveal';
-  setReveal(false); setThink(false); deselect();
+  setReveal(false); deselect();
   if(G.drag){ const c = G.drag.c; G.drag = null; c.classList.remove('dragging', 'pressed'); c.style.transform = ''; }
   markNear(-1e4, -1e4);
   const rest = G.hidden.filter(i => !G.filled.has(i));
-  if(G.mode === 'B') $('#tray').classList.add('closed');
+  $('#tray').classList.add('closed');
   rest.forEach((i, k) => after(k * 1300, () => peek(i)));
   after(rest.length * 1300 + 600, finishQ);
 }
@@ -1014,9 +995,9 @@ function showChar(i, kind){
 function finishQ(){
   if(G.phase === 'done') return;
   G.phase = 'done';
-  setReveal(false); setThink(false); deselect();
+  setReveal(false); deselect();
   $('#tray').classList.add('closed');
-  celebrate(G.mode === 'B' ? 1 : .7);
+  celebrate(1);
   after(1100, showNext);
 }
 function celebrate(level){
@@ -1040,7 +1021,7 @@ function onNext(){
 /* 칭찬 화면 */
 function praise(){
   G.gen++; Clock.timers = []; G.phase = 'praise';
-  clearFx(); setThink(false);
+  clearFx();
   S.badges[G.stage] = (S.badges[G.stage] || 0) + 1; save();
   $('#praiseSq').innerHTML = SQUIRREL;
   $('#badgeBox').innerHTML = badgeSVG(G.stage, true);
@@ -1127,7 +1108,7 @@ function deselect(){
   document.body.classList.remove('picking');
 }
 function onBushTap(i, e){
-  if(G.mode !== 'B' || G.phase !== 'guess' || G.busy || Clock.paused) return;
+  if(G.phase !== 'guess' || G.busy || Clock.paused) return;
   const s = G.slots[i]; if(!s.bush) return;
   e.preventDefault();
   if(G.selected){ const c = G.selected; deselect(); drop(c, i, false); }
@@ -1291,7 +1272,7 @@ function rain(n){
 function renderHud(){
   let stars = '';
   for(let i = 0; i < G.stage; i++) stars += `<svg viewBox="-16 -16 32 32">${starIcon(0, 0, 1)}</svg>`;
-  $('#chip').innerHTML = `<svg viewBox="-50 -50 100 100">${STAGE_ICON[G.stage]()}</svg>${stars}<span class="sep"></span>${G.mode === 'A' ? IC.bubble : IC.finger}`;
+  $('#chip').innerHTML = `<svg viewBox="-50 -50 100 100">${STAGE_ICON[G.stage]()}</svg>${stars}`;
 }
 function renderProgress(){
   let h = '';
@@ -1299,7 +1280,6 @@ function renderProgress(){
   $('#progress').innerHTML = h;
 }
 function setReveal(on){ $('#revealBtn').classList.toggle('hide', !on); }
-function setThink(on){ $('#think').classList.toggle('on', !!on); }
 
 /* 일시정지 */
 let pausedAnims = [], settingsPaused = false;
@@ -1333,6 +1313,14 @@ function closeSettings(){
   $('#settings').classList.remove('show');
   if(settingsPaused){ settingsPaused = false; setPause(false); }
 }
+function renderVoices(){
+  const sel = $('#voiceSel'), cur = currentVoice();
+  if(!VOICES.length){ sel.innerHTML = '<option>이 기기는 영어 음성이 없어요</option>'; sel.disabled = true; return; }
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">자동 (귀여운 목소리 우선)</option>' + VOICES.map(v => `<option value="${v.name.replace(/"/g, '&quot;')}">${v.name.replace(/</g, '&lt;')} (${v.lang})</option>`).join('');
+  sel.value = S.voice && VOICES.some(v => v.name === S.voice) ? S.voice : '';
+  sel.title = cur ? '현재: ' + cur.name : '';
+}
 function renderSettings(){
   document.querySelectorAll('#settings .seg').forEach(seg => {
     const k = seg.dataset.k;
@@ -1352,7 +1340,8 @@ function renderSettings(){
   }
   lg.querySelectorAll('button').forEach(b => b.classList.toggle('on', S.pool.includes(b.dataset.ch)));
   const n = S.pool.length;
-  $('#poolInfo').textContent = `${n}개 선택 · 한 화면에 ${Math.min(10, n)}개`;
+  $('#poolInfo').textContent = `${n}개 선택`;
+  renderVoices();
   $('#poolWarn').textContent = n < 2 ? '알파벳을 2개 이상 골라 주세요.' : '';
 }
 
@@ -1372,8 +1361,6 @@ function toggleFs(){
 function init(){
   buildDecor();
   buildMap();
-  document.querySelector('.modeBtn[data-mode="A"] .ic').innerHTML = IC.bubble;
-  document.querySelector('.modeBtn[data-mode="B"] .ic').innerHTML = IC.finger;
   $('#playBtn').innerHTML = IC.play;
   $('#resumeBtn').innerHTML = IC.play;
   $('#nextBtn').innerHTML = IC.arrow;
@@ -1387,11 +1374,11 @@ function init(){
   $('#homeBtn').innerHTML = IC.home;
   $('#revealBtn').innerHTML = IC.eye + '<span>정답 보기</span>';
   $('#sqMini').insertAdjacentHTML('beforeend', SQUIRREL);
-  $('#think').innerHTML = IC.think;
   document.body.classList.toggle('muted', S.muted);
   updateStart();
 
-  document.querySelectorAll('.modeBtn').forEach(b => b.addEventListener('click', () => { SFX.init(); SFX.tap(); S.mode = b.dataset.mode; save(); updateStart(); }));
+  $('#voiceSel').addEventListener('change', (e) => { S.voice = e.target.value; save(); });
+  $('#voiceTest').addEventListener('click', () => { try { speechSynthesis.cancel(); } catch(e) {} speak('A, B, C! Great job!', true); });
   $('#playBtn').addEventListener('click', startGame);
   $('#nextBtn').addEventListener('click', onNext);
   $('#againBtn').addEventListener('click', () => { SFX.init(); SFX.tap(); startGame(); });
