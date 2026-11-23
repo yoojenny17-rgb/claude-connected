@@ -59,6 +59,9 @@ body[data-screen="game"] .cbtn.pill.game-only{display:flex !important}
 #muteBtn .off{display:none}
 body.muted #muteBtn .on{display:none}
 body.muted #muteBtn .off{display:block}
+#musicBtn .off{display:none}
+body.nomusic #musicBtn .on{display:none}
+body.nomusic #musicBtn .off{display:block}
 
 /* ---------- 시작 화면 ---------- */
 #start{align-items:center;justify-content:center;gap:1.6vh;padding:calc(var(--bar) + 1vh) 3vw 5vh}
@@ -250,6 +253,7 @@ body[data-screen="game"] #sqMini{display:block}
   <button class="cbtn pill game-only" id="revealBtn" aria-label="정답 보기"></button>
   <button class="cbtn game-only" id="homeBtn" aria-label="지도로 돌아가기"></button>
   <button class="cbtn game-only" id="pauseBtn" aria-label="일시정지"></button>
+  <button class="cbtn" id="musicBtn" aria-label="배경음악 켜기/끄기"></button>
   <button class="cbtn" id="muteBtn" aria-label="소리 켜기/끄기"></button>
   <button class="cbtn" id="fsBtn" aria-label="전체화면"></button>
   <button class="cbtn" id="gearBtn" aria-label="선생님 설정"></button>
@@ -266,6 +270,7 @@ body[data-screen="game"] #sqMini{display:block}
     <h2><span id="gearIc"></span>선생님 설정</h2>
     <div class="srow"><label>외우는 시간</label><div class="seg" data-k="mem"><button data-v="5">5초</button><button data-v="8">8초</button><button data-v="12">12초</button></div></div>
     <div class="srow"><label>글자 모양</label><div class="seg" data-k="caseMode"><button data-v="upper">대문자 ABC</button><button data-v="lower">소문자 abc</button><button data-v="mixed">섞어서 Aa</button></div></div>
+    <div class="srow"><label>배경음악</label><div class="seg" data-k="music"><button data-v="off">끄기</button><button data-v="low">작게</button><button data-v="normal">보통</button></div></div>
     <div class="srow"><label>목소리</label><div class="seg" data-k="pitch"><button data-v="normal">보통</button><button data-v="cute">귀엽게</button><button data-v="extra">아주 귀엽게</button></div></div>
     <div class="srow"><label>목소리 종류 <small>기기마다 다름</small></label><div style="display:flex;gap:8px;align-items:center"><select id="voiceSel"></select><button class="quickBtn" id="voiceTest">▶ 들어보기</button></div></div>
     <div class="srow"><label>한 판 문제 수</label><div class="seg" data-k="qcount"><button data-v="3">3</button><button data-v="5">5</button><button data-v="10">10</button></div></div>
@@ -380,7 +385,7 @@ function starPath(R, r){ let d = ''; for(let i = 0; i < 10; i++){ const a = -Mat
    설정 저장
    ========================================================= */
 const KEY = 'alphabetForest.v1';
-const DEFAULTS = {mem:8, caseMode:'upper', qcount:5, pool:LETTERS.slice(), muted:false, stage:1, pitch:'cute', voice:'', badges:{1:0, 2:0, 3:0}};
+const DEFAULTS = {mem:8, caseMode:'upper', qcount:5, pool:LETTERS.slice(), muted:false, stage:1, pitch:'cute', voice:'', music:'normal', musicLast:'normal', badges:{1:0, 2:0, 3:0}};
 const STAGE_COUNT = {1:5, 2:7, 3:10};
 const S = (() => {
   let saved = null;
@@ -408,6 +413,7 @@ const SFX = {
         this.out.connect(this.ctx.destination);
       }
       if(this.ctx.state === 'suspended' && !Clock.paused) this.ctx.resume();
+      Music.sync();
     } catch(e) {}
   },
   ok(){ return this.ctx && !S.muted && this.ctx.state !== 'closed'; },
@@ -487,6 +493,84 @@ const SFX = {
   stamp(){ this.tone(150, {dur:.28, to:55, vol:.35}); this.noise({dur:.1, vol:.18, type:'lowpass', f:900, attack:.003}); }
 };
 
+/* =========================================================
+   배경음악 (Web Audio로 만든 오르골풍 오리지널 곡, 약 19초 반복)
+   ========================================================= */
+const Music = (() => {
+  const STEP = .3, TOTAL = 64;            /* 8분음표 = 0.3초, 8마디 */
+  const mel = [[0,76,2],[2,79,2],[4,84,3],[7,79,1],[8,81,2],[10,76,2],[12,72,4],[16,77,2],[18,81,2],[20,84,2],[22,81,2],
+    [24,79,3],[27,77,1],[28,76,2],[30,74,2],[32,76,2],[34,79,2],[36,84,2],[38,86,2],[40,88,3],[43,86,1],[44,84,2],[46,81,2],
+    [48,77,2],[50,81,2],[52,79,2],[54,83,2],[56,84,6]];
+  const C = [48,52,55], Am = [45,48,52], F = [41,45,48], Gc = [43,47,50];
+  const bars = [C, Am, F, Gc, C, Am, F, C];
+  const ev = Array.from({length:TOTAL}, () => []);
+  mel.forEach(([st, m, d]) => ev[st].push(['mel', m, d]));
+  bars.forEach((ch, b) => {
+    const at = (i) => (b === 6 && i >= 4) ? Gc : ch;   /* 7마디 후반은 G */
+    [0, 4].forEach(i => ev[b * 8 + i].push(['bass', at(i)[0], 4]));
+    [[2,1],[3,2],[6,1],[7,2]].forEach(([i, k]) => ev[b * 8 + i].push(['arp', at(i)[k] + 12, 1]));
+  });
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  let gain = null, timer = null, next = 0, step = 0, ducked = false;
+  function level(){ return (S.muted || S.music === 'off') ? 0.0001 : (S.music === 'low' ? .06 : .12) * (ducked ? .35 : 1); }
+  function note(kind, m, d, t){
+    const c = SFX.ctx;
+    const o = c.createOscillator(), g = c.createGain();
+    const f = hz(m), len = d * STEP;
+    if(kind === 'mel'){
+      const o2 = c.createOscillator(), g2 = c.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      o2.type = 'sine'; o2.frequency.value = f * 3.01; g2.gain.value = .18;
+      o2.connect(g2); g2.connect(g);
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.55, t + .008);
+      g.gain.exponentialRampToValueAtTime(.0001, t + Math.max(.7, len) + .5);
+      o2.start(t); o2.stop(t + len + 1.3);
+    } else if(kind === 'arp'){
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .01);
+      g.gain.exponentialRampToValueAtTime(.0001, t + .55);
+    } else {
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.32, t + .05);
+      g.gain.exponentialRampToValueAtTime(.0001, t + len + .2);
+    }
+    o.connect(g); g.connect(gain);
+    o.start(t); o.stop(t + len + 1.3);
+  }
+  function pump(){
+    const c = SFX.ctx;
+    if(!c || c.state !== 'running' || !gain) return;
+    if(next < c.currentTime - .1) next = c.currentTime + .05;   /* 탭이 숨겨졌다 돌아온 경우 */
+    while(next < c.currentTime + .4){
+      ev[step].forEach(([k, m, d]) => note(k, m, d, next));
+      next += STEP; step = (step + 1) % TOTAL;
+    }
+  }
+  function start(){
+    const c = SFX.ctx;
+    if(!c || timer) return;
+    gain = c.createGain(); gain.gain.value = .0001; gain.connect(c.destination);
+    gain.gain.setTargetAtTime(level(), c.currentTime, .6);
+    next = c.currentTime + .1; step = 0;
+    timer = setInterval(pump, 60);
+  }
+  function stop(){
+    if(!timer) return;
+    clearInterval(timer); timer = null;
+    const g = gain, c = SFX.ctx; gain = null;
+    try { g.gain.setTargetAtTime(.0001, c.currentTime, .2); setTimeout(() => g.disconnect(), 1500); } catch(e) {}
+  }
+  function apply(){ if(gain) gain.gain.setTargetAtTime(level(), SFX.ctx.currentTime, .15); }
+  return {
+    sync(){
+      document.body.classList.toggle('nomusic', S.music === 'off');
+      if(!SFX.ctx) return;
+      if(S.music === 'off' || S.muted) stop(); else { start(); apply(); }
+    },
+    duck(on){ ducked = on; apply(); if(on) setTimeout(() => { ducked = false; apply(); }, 4000); }
+  };
+})();
+
 /* 음성 (Web Speech API, 영어) */
 let VOICES = [];
 /* 귀여운 목소리 우선순위: 어린이 목소리(Ana, Junior) → 밝은 여성 목소리 */
@@ -509,6 +593,8 @@ function speak(text, force){
     const v = currentVoice();
     u.lang = v ? v.lang : 'en-US'; if(v) u.voice = v;
     u.rate = S.pitch === 'normal' ? .8 : .88; u.pitch = PITCH[S.pitch] || PITCH.cute; u.volume = 1;
+    Music.duck(true);
+    u.onend = u.onerror = () => Music.duck(false);
     speechSynthesis.speak(u);
   } catch(e) {}
 }
@@ -678,6 +764,7 @@ const SQUIRREL = `<svg viewBox="0 0 125 136" aria-hidden="true">${SQ_INNER}</svg
 const IC = {
   gear:`<svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7z" fill="none" stroke="#7a6a58" stroke-width="2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4.9a7.5 7.5 0 0 0-2.6-1.5L14 2.4h-4l-.4 2.5A7.5 7.5 0 0 0 7 6.4l-2.4-.9-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-.9a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.4.9 2-3.4z" fill="none" stroke="#7a6a58" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
   sound:`<svg viewBox="0 0 24 24"><g class="on"><path d="M4 9h3.5L12 5v14l-4.5-4H4z" fill="#7a6a58"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="#7a6a58" stroke-width="2" stroke-linecap="round"/></g><g class="off"><path d="M4 9h3.5L12 5v14l-4.5-4H4z" fill="#b8a994"/><path d="M16 9.5l5 5M21 9.5l-5 5" stroke="#D93650" stroke-width="2.2" stroke-linecap="round"/></g></svg>`,
+  music:`<svg viewBox="0 0 24 24"><g class="on"><path d="M9 17V6l10-2v11" fill="none" stroke="#7a6a58" stroke-width="2" stroke-linejoin="round"/><ellipse cx="6.6" cy="17.2" rx="2.8" ry="2.2" fill="#7a6a58"/><ellipse cx="16.6" cy="15.2" rx="2.8" ry="2.2" fill="#7a6a58"/></g><g class="off"><path d="M9 17V6l10-2v11" fill="none" stroke="#b8a994" stroke-width="2" stroke-linejoin="round"/><ellipse cx="6.6" cy="17.2" rx="2.8" ry="2.2" fill="#b8a994"/><ellipse cx="16.6" cy="15.2" rx="2.8" ry="2.2" fill="#b8a994"/><path d="M3 3l18 18" stroke="#D93650" stroke-width="2.2" stroke-linecap="round"/></g></svg>`,
   fs:`<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="#7a6a58" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   pause:`<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.6" fill="#7a6a58"/><rect x="14" y="5" width="4" height="14" rx="1.6" fill="#7a6a58"/></svg>`,
   home:`<svg viewBox="0 0 24 24"><path d="M3 7l5-2.5 8 3 5-2.5v12.5l-5 2.5-8-3-5 2.5z" fill="#F6E7C3" stroke="#7a6a58" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4.5v12.5M16 7.5V20" stroke="#7a6a58" stroke-width="1.6"/><path d="M10 12.5l1.5 1.5L14 10.5" fill="none" stroke="#D93650" stroke-width="1.6" stroke-linecap="round"/></svg>`,
@@ -1369,12 +1456,14 @@ function init(){
   $('#gearBtn').innerHTML = IC.gear;
   $('#gearIc').innerHTML = IC.gear;
   $('#muteBtn').innerHTML = IC.sound;
+  $('#musicBtn').innerHTML = IC.music;
   $('#fsBtn').innerHTML = IC.fs;
   $('#pauseBtn').innerHTML = IC.pause;
   $('#homeBtn').innerHTML = IC.home;
   $('#revealBtn').innerHTML = IC.eye + '<span>정답 보기</span>';
   $('#sqMini').insertAdjacentHTML('beforeend', SQUIRREL);
   document.body.classList.toggle('muted', S.muted);
+  document.body.classList.toggle('nomusic', S.music === 'off');
   updateStart();
 
   $('#voiceSel').addEventListener('change', (e) => { S.voice = e.target.value; save(); });
@@ -1390,6 +1479,11 @@ function init(){
   $('#muteBtn').addEventListener('click', () => {
     S.muted = !S.muted; save(); document.body.classList.toggle('muted', S.muted);
     if(S.muted){ try { speechSynthesis.cancel(); } catch(e) {} } else { SFX.init(); SFX.tap(); }
+    Music.sync();
+  });
+  $('#musicBtn').addEventListener('click', () => {
+    if(S.music === 'off') S.music = S.musicLast || 'normal'; else { S.musicLast = S.music; S.music = 'off'; }
+    save(); SFX.init(); Music.sync();
   });
   $('#fsBtn').addEventListener('click', toggleFs);
   $('#gearBtn').addEventListener('click', openSettings);
@@ -1398,6 +1492,7 @@ function init(){
   document.querySelectorAll('#settings .seg button').forEach(b => b.addEventListener('click', () => {
     const k = b.parentElement.dataset.k, v = b.dataset.v;
     S[k] = isNaN(+v) ? v : +v; renderSettings();
+    if(k === 'music'){ if(v !== 'off') S.musicLast = v; SFX.init(); Music.sync(); }
   }));
   document.querySelectorAll('#settings .quick button').forEach(b => b.addEventListener('click', () => {
     const q = b.dataset.q;
